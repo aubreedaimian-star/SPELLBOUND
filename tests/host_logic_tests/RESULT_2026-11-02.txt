@@ -1,0 +1,11 @@
+PASS payload is 72 LEDs x RGB = 216 bytes
+PASS colorWheel never exceeds brightness cap 110
+PASS makeOff clears every byte
+PASS stationary sample -> no movement
+PASS gyro 59 deg/s -> below threshold
+PASS gyro 61 deg/s -> movement
+PASS accel delta 0.40 g -> movement
+PASS same accel again (delta 0) -> no movement
+PASS constant 45-degree tilt -> no movement
+PASS I2C NACK -> returns false (indistinguishable from 'no movement')
+ALL HOST LOGIC TESTS PASSED (0 failures)

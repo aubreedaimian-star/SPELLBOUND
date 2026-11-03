@@ -1,0 +1,10 @@
+PASS webled
+PASS vespera_v1
+PASS vespera_v2
+PASS datacollector_mkr1010_repaired
+PASS datacollector_esp32
+FAIL datacollector_CORRUPTED_original_expected_FAIL
+x.cpp:8:1: error: 'Filter' does not name a type
+    8 | Filter your search...
+      | ^~~~~~
+x.cpp: In function 'bool writeRegister(uint8_t, uint8_t)':

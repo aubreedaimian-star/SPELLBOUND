@@ -1,0 +1,10 @@
+#include <Arduino.h>
+
+#ifdef __STATIC_FORCEINLINE
+CMSIS_STATIC_FORCEINLINE_IS_DEFINED
+#endif
+
+#ifdef __SSAT
+CMSIS_SSAT_IS_DEFINED
+#endif
+

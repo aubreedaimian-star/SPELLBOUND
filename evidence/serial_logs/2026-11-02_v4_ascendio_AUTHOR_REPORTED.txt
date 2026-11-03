@@ -1,0 +1,21 @@
+SOURCE: transcribed by the author in a chat message on 3 Nov 2026.
+        The original Serial Monitor output was NOT found as a file on the PC.
+        Only these two lines were provided. They are reproduced exactly.
+SKETCH: firmware/latest/v4/v4.ino (inferred: these exact print formats exist only in v4)
+BOARD:  Adafruit ESP32 Feather + MPU6050 (per v4 source)
+MODEL:  MAGIC2_inferencing, Edge Impulse project 1153638, deployment v3 (per v4 #include)
+NETWORK: author reports Wi-Fi was failing during this run -> no MQTT, no Vespera output.
+
+----- begin author-reported lines -----
+[AI] Detected: Ascendio | Confidence: 0.9922
+[SPELL] CAST: Ascendio
+----- end -----
+
+INTERPRETATION LIMITS
+- One classification of one gesture. Not a measure of model accuracy.
+- Confidence 0.9922 is the model's softmax score for this window, not a probability of correctness.
+- Not evidence of MQTT delivery or a physical lighting response.
+
+TO STRENGTHEN THIS EVIDENCE: save the full Serial Monitor text (including the
+"[CAPTURE] Samples: 100/100" and "[AI] Classification:" score lines) and a
+photo/video of the wand and Serial Monitor.

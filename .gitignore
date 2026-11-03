@@ -1,0 +1,28 @@
+# Never commit real credentials
+arduino_secrets.h
+**/arduino_secrets.h
+secrets.h
+*.env
+.env*
+
+# Arduino / build outputs
+build/
+**/build/
+*.bin
+*.elf
+*.hex
+*.map
+*.o
+*.a
+*.d
+includes.cache
+libraries.cache
+compile_commands.json
+build.options.json.tmp
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

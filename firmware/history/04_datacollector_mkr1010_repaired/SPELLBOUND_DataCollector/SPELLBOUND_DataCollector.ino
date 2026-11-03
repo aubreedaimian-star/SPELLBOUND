@@ -1,0 +1,146 @@
+
+#include <Wire.h>
+
+// SPELLBOUND - MPU6050 Data Collector
+// Arduino MKR WiFi 1010 + MPU6050
+// Edge Impulse Data Forwarder
+// [REPAIRED 2026-11-02] Removed 8 lines of accidentally pasted web-UI text
+// ("Filter your search...", "Type:", "All") that split this comment.
+// No functional code was changed. Original kept in evidence/original_as_found/.
+
+uint8_t MPU_ADDR = 0x68;
+
+const unsigned long SAMPLE_INTERVAL_US = 20000;
+// 20,000 microseconds = 50 Hz
+
+unsigned long lastSampleTime = 0;
+
+// Write a value to a MPU6050 register
+bool writeRegister(uint8_t reg, uint8_t value) {
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(reg);
+  Wire.write(value);
+
+  return Wire.endTransmission() == 0;
+}
+
+// Read one signed 16-bit sensor value
+int16_t read16() {
+  uint16_t highByte = (uint8_t)Wire.read();
+  uint16_t lowByte = (uint8_t)Wire.read();
+
+  return (int16_t)((highByte << 8) | lowByte);
+}
+
+// Find the MPU6050 on I2C
+bool detectIMU() {
+  const uint8_t addresses[] = {0x68, 0x69};
+
+  for (int i = 0; i < 2; i++) {
+    Wire.beginTransmission(addresses[i]);
+
+    if (Wire.endTransmission() == 0) {
+      MPU_ADDR = addresses[i];
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  unsigned long start = millis();
+  while (!Serial && millis() - start < 3000) {}
+
+  Wire.begin();
+
+  if (!detectIMU()) {
+    Serial.println("MPU6050_NOT_FOUND");
+    while (true) {
+      delay(1000);
+    }
+  }
+
+  // Wake up the MPU6050
+  writeRegister(0x6B, 0x00);
+
+  // Sample rate divider: 1kHz / 20 = 50Hz
+  writeRegister(0x19, 19);
+
+  // Digital low-pass filter
+  writeRegister(0x1A, 0x03);
+
+  // Accelerometer: +/- 2g
+  writeRegister(0x1C, 0x00);
+
+  // Gyroscope: +/- 250 degrees/second
+  writeRegister(0x1B, 0x00);
+
+  delay(100);
+
+  lastSampleTime = micros();
+}
+
+void loop() {
+  unsigned long now = micros();
+
+  if ((unsigned long)(now - lastSampleTime)
+      < SAMPLE_INTERVAL_US) {
+    return;
+  }
+
+  lastSampleTime += SAMPLE_INTERVAL_US;
+
+  // Request sensor data
+  Wire.beginTransmission(MPU_ADDR);
+  Wire.write(0x3B);
+
+  if (Wire.endTransmission(false) != 0) {
+    return;
+  }
+
+  if (Wire.requestFrom(MPU_ADDR, (uint8_t)14) != 14) {
+    return;
+  }
+
+  // Read acceleration
+  int16_t ax = read16();
+  int16_t ay = read16();
+  int16_t az = read16();
+
+  // Skip temperature
+  read16();
+
+  // Read angular velocity
+  int16_t gx = read16();
+  int16_t gy = read16();
+  int16_t gz = read16();
+
+  // Convert acceleration to m/s^2
+  float accX = ax / 16384.0f * 9.80665f;
+  float accY = ay / 16384.0f * 9.80665f;
+  float accZ = az / 16384.0f * 9.80665f;
+
+  // Convert angular velocity to deg/s
+  float gyroX = gx / 131.0f;
+  float gyroY = gy / 131.0f;
+  float gyroZ = gz / 131.0f;
+
+  // IMPORTANT:
+  // Exactly 6 numbers per line, comma-separated.
+  // No headings or debug messages.
+
+  Serial.print(accX, 3);
+  Serial.print(',');
+  Serial.print(accY, 3);
+  Serial.print(',');
+  Serial.print(accZ, 3);
+  Serial.print(',');
+  Serial.print(gyroX, 3);
+  Serial.print(',');
+  Serial.print(gyroY, 3);
+  Serial.print(',');
+  Serial.println(gyroZ, 3);
+}

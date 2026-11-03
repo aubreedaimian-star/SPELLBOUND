@@ -1,0 +1,15 @@
+6,14c6,9
+< // Edge Impu
+< Filter your search...
+< Type:
+< 
+< All
+< 
+< 
+< 
+< lse Data Forwarder
+---
+> // Edge Impulse Data Forwarder
+> // [REPAIRED 2026-11-02] Removed 8 lines of accidentally pasted web-UI text
+> // ("Filter your search...", "Type:", "All") that split this comment.
+> // No functional code was changed. Original kept in evidence/original_as_found/.

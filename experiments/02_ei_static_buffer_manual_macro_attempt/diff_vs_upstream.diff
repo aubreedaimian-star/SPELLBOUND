@@ -1,0 +1,11 @@
+17a18,27
+> #ifndef __STATIC_FORCEINLINE
+> #define __STATIC_FORCEINLINE static inline __attribute__((always_inline))
+> #endif
+> #include <MAGIC_inferencing.h>
+> #ifndef __STATIC_FORCEINLINE
+> #define __STATIC_FORCEINLINE static inline __attribute__((always_inline))
+> #endif
+> 
+> #define EIDSP_USE_CMSIS_DSP 0
+> 
