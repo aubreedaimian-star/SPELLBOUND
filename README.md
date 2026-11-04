@@ -47,6 +47,7 @@ Exact library names, model header, board selection and luminaire access must mat
 - [Development log](docs/development-log.md)
 - [AI contributions](docs/ai-contributions.md)
 - [Edge Impulse training records](evidence/edge_impulse/README.md)
+- [Development notes and serial evidence](evidence/development_notes/README.md)
 - [Model package notes](models/README.md)
 
 ## Development history
