@@ -2,11 +2,11 @@
 
 A gesture-controlled wand for the CASA0014 Vespera luminaire (UCL Connected Environments, 2026).
 
-The wand uses an MPU6050 motion sensor on an ESP32 Feather. Pressing the button starts a two-second capture. An Edge Impulse model classifies the movement and the ESP32 sends RGB animation frames to Vespera #11 over MQTT.
+The wand uses an MPU6050 motion sensor on an ESP32 Feather. Pressing the button starts a 350 ms cyan preparation cue, followed by a two-second capture. An Edge Impulse model classifies the movement and the ESP32 sends RGB animation frames to Vespera #11 over MQTT.
 
 ## Final adopted source
 
-The author supplied [`SPELLBOUND_Final.ino`](firmware/final/SPELLBOUND_Final.ino) as the final adopted sketch on 4 Nov 2026. It uses the MAGIC Edge Impulse export (`MAGIC_inferencing.h`) and acceleration in m/s². The retained serial screenshots show a different build: they include fallback-demo messages that do not exist in this final sketch. They are kept as development evidence, not presented as test logs from this exact file.
+The author supplied [`SPELLBOUND_Final.ino`](firmware/final/SPELLBOUND_Final.ino) as the final adopted sketch on 4 Nov 2026; the attached follow-up is a further iteration of that same final version. It uses the MAGIC Edge Impulse export (`MAGIC_inferencing.h`) and acceleration in m/s². The retained serial screenshots show a different build: they include fallback-demo messages that do not exist in this final sketch. They are kept as development evidence, not presented as test logs from this exact file.
 
 The author reports that their prototype demonstrations worked, including gesture recognition and the light effects. A full run-by-run count was not recorded. The Oppugno excerpt at [serial evidence](evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt) is one inference at 98.4% confidence, not a model accuracy result; its exact firmware build was not recorded.
 
@@ -25,7 +25,7 @@ flowchart TD
   S -->|ci| O["Lights off"]
 ```
 
-With `CI_TURNS_OFF = true`, `ci` turns the lights off. A low-confidence result flashes red and does not play the earlier candidate's fallback sequence. The capture cue is cyan and recognised gestures flash purple.
+With `CI_TURNS_OFF = true`, `ci` turns the lights off. A low-confidence result flashes red and does not play the earlier candidate's fallback sequence. The capture cue is cyan for 350 ms before sampling and recognised gestures flash purple. The updated source also prints sample timing and sensor saturation diagnostics, and rejects captures below a configurable gyro-motion threshold. These are diagnostic and filtering changes, not evidence of higher recognition accuracy until checked on the physical setup.
 
 ## Hardware and wiring
 
@@ -47,7 +47,7 @@ The sensor address is 0x68. The ESP32 publishes to Vespera #11 over `mqtt.cetool
 4. Open `firmware/final/SPELLBOUND_Final.ino` in Arduino IDE, select the ESP32 Feather and its port, then open Serial Monitor at 115200 baud.
 5. Wait for `[MQTT] Connected!`, then press the button once. Serial commands `g`, `1`–`6` and `o` are also available for casting, previewing and switching the lights off.
 
-The sketch sets `ACCEL_IN_G = false`, so acceleration is passed in m/s². The source header records checking this against 227 MAGIC samples. Earlier MAGIC2 sketches use a different export and are retained as earlier iterations.
+The sketch sets `ACCEL_IN_G = false`, so acceleration is passed in m/s². `DIAG_ENABLED` prints sampling interval and saturation information; `MOTION_GATE_ENABLED` rejects very low gyro movement (35 dps by default). `ENABLE_RETRY` is off by default. The source header records checking this against 227 MAGIC samples. Earlier MAGIC2 sketches use a different export and are retained as earlier iterations.
 
 ## Project documentation
 

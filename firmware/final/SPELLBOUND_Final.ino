@@ -7,13 +7,13 @@
  *       （对着 MAGIC 训练导出核过，227 个样本全是这个格式）
  *
  * 操作：
- *   按钮（GPIO27 -> GND）按一下施法（马上开始 2 秒采集）
+ *   按钮（GPIO27 -> GND）按一下施法（青色亮起 350ms 后开始 2 秒采集）
  *   串口 'g'              施法
  *   串口 '1'..'6'         预览灯光效果（2 = ci）
  *   串口 'o'              全部关灯
  *
  * Vespera #11 上的灯光提示：
- *   青色   = 正在采集，现在挥魔杖
+ *   青色   = 准备 + 正在采集，现在挥魔杖
  *   紫色   = 识别到了，然后播放咒语效果
  *   红色   = 没识别出来，再试一次
  *
@@ -22,6 +22,21 @@
  *
  * IMPORTANT: Only install ONE Edge Impulse library. Remove MAGIC2_inferencing
  * from Arduino/libraries before compiling, or the IDE may pick the wrong SDK.
+ *
+ * 提高正确率的改动（相对最初版本）：
+ *   - 按下按钮后先给 350ms 准备期，避免把手指动作录进窗口
+ *   - I2C 提到 400kHz，减少采样抖动
+ *   - 采样间隔诊断（min/max/mean dt），确认真的是 50Hz
+ *   - 饱和诊断（±2g / ±250dps 是否被削顶）
+ *   - 静止误触发过滤（陀螺仪峰值太低直接拒绝）
+ *   - 可选的低置信度自动重试（默认关，crit 演示时别开）
+ * Accuracy improvements (vs. the first version):
+ *   - 350ms prep window after button press so finger motion isn't captured
+ *   - I2C at 400kHz to reduce sampling jitter
+ *   - Sample-interval diagnostics (min/max/mean dt) to verify 50Hz
+ *   - Saturation diagnostics (±2g / ±250dps clipping)
+ *   - Motion gate: reject captures with too little gyro movement
+ *   - Optional retry on low confidence (off by default, don't enable during crit)
  */
 
 #include <Arduino.h>
@@ -34,6 +49,19 @@
 #include <math.h>
 #include <string.h>
 #include "arduino_secrets.h"
+
+// ==================================================
+// 0. 编译开关 / Compile-time switches
+// ==================================================
+// crit 演示前可以把 DIAG_ENABLED 改成 0，少刷点串口
+// Set DIAG_ENABLED to 0 before the crit to reduce serial spam
+#define DIAG_ENABLED 1
+// 低置信度自动重试，默认关，开了最坏情况一次施法 4 秒
+// Auto-retry on low confidence, off by default; worst case 4s per cast if on
+#define ENABLE_RETRY 0
+// 静止误触发过滤，如果某个轻动作被误杀，改成 0 或者调低阈值
+// Motion gate; set to 0 or lower the threshold if a gentle gesture gets rejected
+#define MOTION_GATE_ENABLED 1
 
 // ==================================================
 // 1. 硬件接线 / Hardware
@@ -97,10 +125,24 @@ const char* SPELL_NAMES[] = {
 constexpr int SPELL_COUNT = 6;
 constexpr int SPELL_CI = 1;
 
-// 模型类别也要和咒语列表一样多，装错导出时编译就会提醒。
-// The model label count must match the spell list, so a wrong export fails at compile time.
+// Model output labels must match the spell mapping above.
 static_assert(EI_CLASSIFIER_LABEL_COUNT == SPELL_COUNT,
               "Model label count mismatch - check the MAGIC export");
+
+// ==================================================
+// 3b. 触发和门限 / Trigger and gates
+// ==================================================
+// 按下按钮后先亮青色 350ms，让手从按钮上拿开、把魔杖摆好
+// 这个是我后来加的，不加的话前 0.3 秒全是手指动作
+// After the button press, show cyan for 350ms so the hand can leave the button
+// and the wand can be positioned; without this the first 0.3s is finger motion
+constexpr uint32_t CAST_PREP_MS = 350;
+
+// 陀螺仪峰值低于这个值就当成“没动”，直接拒绝，避免静止时乱触发
+// 如果某个轻动作被误杀，把这个调低（比如 25）或者把 MOTION_GATE_ENABLED 设 0
+// If gyro peak is below this, treat as "no motion" and reject; avoids idle triggers
+// If a gentle gesture gets rejected, lower this (e.g. 25) or set MOTION_GATE_ENABLED to 0
+constexpr float NO_MOTION_GYRO_PEAK_DPS = 35.0f;
 
 // ==================================================
 // 4. MQTT / Vespera
@@ -192,6 +234,16 @@ static void flashFeedback(uint8_t r, uint8_t g, uint8_t b) {
     showSolid(0, 0, 0);
     delay(110);
     mqtt.loop();
+  }
+}
+
+// 等待一段时间，同时保持 MQTT 心跳，不然准备期里连接可能掉
+// Wait for a while while keeping MQTT alive, otherwise the connection may drop
+static void waitWithMqtt(uint32_t ms) {
+  uint32_t start = millis();
+  while ((uint32_t)(millis() - start) < ms) {
+    mqtt.loop();
+    delay(5);
   }
 }
 
@@ -350,8 +402,16 @@ static void updateEffect() {
 static int captureAndClassify() {
   Serial.println("[IMU] Capturing 2 seconds. Cast NOW!");
 
-  // 用 micros 卡时间，比 delay 准一点
-  // Using micros to pace samples, a bit more accurate than delay
+  // 饱和计数：±2g 对应 19.62 m/s²，±250dps 对应 4.363 rad/s
+  // Saturation counters: ±2g = 19.62 m/s², ±250dps = 4.363 rad/s
+  uint32_t satAcc = 0, satGyro = 0;
+
+  // 采样间隔统计，确认真的是 50Hz（目标 20000us）
+  // Sample-interval stats to verify 50Hz (target 20000us)
+  uint32_t prevUs = micros();
+  uint32_t minDt = 0xFFFFFFFFUL, maxDt = 0;
+  uint32_t sumDt = 0;
+
   uint32_t nextSample = micros();
   for (int n = 0; n < SAMPLE_COUNT; ++n) {
     while ((int32_t)(micros() - nextSample) < 0) {
@@ -365,6 +425,26 @@ static int captureAndClassify() {
       return -1;
     }
 
+    // 采样间隔统计（第一个样本跳过，因为 prevUs 是进入循环前的值）
+    // Interval stats (skip the first sample; prevUs is from before the loop)
+    uint32_t nowUs = micros();
+    uint32_t dt = nowUs - prevUs;
+    prevUs = nowUs;
+    if (n > 0) {
+      if (dt < minDt) minDt = dt;
+      if (dt > maxDt) maxDt = dt;
+      sumDt += dt;
+    }
+
+    // 饱和检测在原始单位上做，乘换算之前
+    // Saturation check on raw units, before any conversion
+    if (fabsf(a.acceleration.x) > 19.0f ||
+        fabsf(a.acceleration.y) > 19.0f ||
+        fabsf(a.acceleration.z) > 19.0f) satAcc++;
+    if (fabsf(g.gyro.x) > 4.2f ||
+        fabsf(g.gyro.y) > 4.2f ||
+        fabsf(g.gyro.z) > 4.2f) satGyro++;
+
     // 通道顺序必须是 ax ay az gx gy gz，顺序错了模型直接废
     // Channel order must be ax ay az gx gy gz; wrong order kills the model
     const int offset = n * AXES;
@@ -377,6 +457,39 @@ static int captureAndClassify() {
   }
 
   Serial.println("[IMU] 100 samples captured. Running inference...");
+
+#if DIAG_ENABLED
+  // 这几个打印是调正确率的关键，先看饱和和抖动，再看分类
+  // These prints are key for tuning accuracy; check saturation and jitter first
+  uint32_t meanDt = sumDt / (uint32_t)(SAMPLE_COUNT - 1);
+  Serial.printf("[DIAG] dt min=%lu max=%lu mean=%lu us (target 20000)\n",
+                (unsigned long)minDt, (unsigned long)maxDt, (unsigned long)meanDt);
+  Serial.printf("[DIAG] satAcc=%lu satGyro=%lu / %d samples\n",
+                (unsigned long)satAcc, (unsigned long)satGyro, SAMPLE_COUNT);
+#endif
+
+  // 静止过滤：算陀螺仪峰值（features 里已经是 deg/s）
+  // Motion gate: compute gyro peak (features already in deg/s)
+  float gyroPeak = 0.0f;
+  for (int n = 0; n < SAMPLE_COUNT; ++n) {
+    const int o = n * AXES;
+    float mag = sqrtf(features[o + 3] * features[o + 3] +
+                      features[o + 4] * features[o + 4] +
+                      features[o + 5] * features[o + 5]);
+    if (mag > gyroPeak) gyroPeak = mag;
+  }
+
+#if DIAG_ENABLED
+  Serial.printf("[DIAG] gyroPeak=%.1f dps (gate=%.1f)\n",
+                gyroPeak, NO_MOTION_GYRO_PEAK_DPS);
+#endif
+
+#if MOTION_GATE_ENABLED
+  if (gyroPeak < NO_MOTION_GYRO_PEAK_DPS) {
+    Serial.println("[AI] No motion detected, skip classification.");
+    return -1;
+  }
+#endif
 
   signal_t signal;
   int signalError = numpy::signal_from_buffer(features, FEATURE_COUNT, &signal);
@@ -449,7 +562,21 @@ static void castSpell() {
     Serial.println("[LIGHT] Cue unavailable (MQTT disconnected)");
   }
 
+  // 关键改动：青色亮起后等 350ms，让手离开按钮、把魔杖摆好
+  // Key change: wait 350ms after cyan so the hand leaves the button and
+  // the wand can be positioned before the 2s window starts
+  waitWithMqtt(CAST_PREP_MS);
+
   int spell = captureAndClassify();
+
+#if ENABLE_RETRY
+  if (spell < 0) {
+    Serial.println("[CAST] First attempt failed, retrying once...");
+    showSolid(10, 185, 230);
+    waitWithMqtt(CAST_PREP_MS);
+    spell = captureAndClassify();
+  }
+#endif
 
   if (spell >= 0) {
     Serial.println("[LIGHT] Purple = recognised");
@@ -501,11 +628,21 @@ void setup() {
   Serial.println(EI_CLASSIFIER_LABEL_COUNT);
 
   Wire.begin(SDA_PIN, SCL_PIN);
+  // I2C 提到 400kHz，读 14 字节从约 1.4ms 降到约 0.35ms，采样抖动更小
+  // I2C at 400kHz: reading 14 bytes drops from ~1.4ms to ~0.35ms, less jitter
+  Wire.setClock(400000);
+
   if (!imu.begin(MPU_ADDRESS, &Wire)) {
     Serial.println("[FATAL] MPU6050 not found. Check SDA=23 SCL=22, power and GND.");
     while (true) delay(1000);  // 找不到就停这儿，省得后面全是错
                                // Stop here if not found, otherwise everything downstream fails
   }
+  // 注意：这里保持 ±2g / ±250dps，和训练数据一致最重要
+  // 如果 [DIAG] 里 satGyro 经常 > 20，说明挥动时饱和了，
+  // 但改量程前一定要先确认训练 CSV 也是这个量程
+  // Note: keep ±2g / ±250dps here; matching the training data matters most
+  // If [DIAG] shows satGyro > 20 often, the wand is clipping during fast swings,
+  // but check the training CSV used the same range before changing this
   imu.setAccelerometerRange(MPU6050_RANGE_2_G);
   imu.setGyroRange(MPU6050_RANGE_250_DEG);
   imu.setFilterBandwidth(MPU6050_BAND_21_HZ);
