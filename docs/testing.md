@@ -1,45 +1,31 @@
 # Testing and evidence
 
-This page separates the author's demonstration report, the serial evidence that was retained, and checks performed on a computer. The repository does not contain a full run-by-run test tally.
+This page separates the final adopted source, earlier candidate screenshots, and the author's demonstration report.
 
-## Physical demonstration
+## Final adopted source
 
-The author reports that their prototype demonstrations succeeded, including gesture recognition and the Vespera light effects. They did not record every run or count the total number of attempts.
+The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted sketch on 4 Nov 2026. It uses MAGIC, a two-second capture at 50 Hz, a 0.65 recognition threshold, a red retry cue on low confidence, and turns the lights off for `ci` when `CI_TURNS_OFF` is true. It has no 2, 3, 5 fallback sequence.
 
-The only recent serial excerpt supplied is [one Oppugno result](../evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt): the classifier printed 98.4% for Oppugno, followed by a recognised-colour message and the spell name. The excerpt ends at a Wi-Fi connection message. It is a representative inference, not a model accuracy result and not a complete log of the light response.
+The author reports that their prototype demonstrations worked, including gesture recognition and the light effects. No run-by-run count was recorded. The retained screenshots do not identify this final source as the flashed build; their serial text includes the earlier candidate's fallback messages. This means the screenshots document development, but do not independently verify the final sketch.
 
-The exact firmware version used for that reported demonstration has not been confirmed. The saved visual-effects sketch is therefore included as a candidate, not labelled as the verified flashed build.
+The supplied Oppugno excerpt at `evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt` shows one 98.4% prediction. The exact firmware version is not identified, and a confidence score is not overall model accuracy.
 
-## What the candidate sketch is intended to do
+## Earlier visual-effects candidate
 
-`firmware/candidate/SPELLBOUND_Visual_Effects.ino` contains:
-
-- 100 IMU samples at 50 Hz during a two-second capture;
-- Edge Impulse classification over six spell labels;
-- MQTT publishing of 72 RGB pixels (216 bytes) to Vespera #11;
-- a capture cue, spell animations and a held final frame;
-- fallback previews 2, 3 and 5 in order across successive unrecognised gestures.
-
-These are code features. Their presence in the file does not independently verify that this exact sketch was uploaded or tested.
-
-## Earlier recorded run
-
-The repository also retains an author-reported v4 Ascendio result from 2 Nov in `evidence/serial_logs/2026-11-02_v4_ascendio_AUTHOR_REPORTED.txt`. It records one classification at 0.9922 confidence. It does not establish model accuracy or repeatability.
+`firmware/candidate/SPELLBOUND_Visual_Effects.ino` is an earlier version. It has a countdown cue and plays demo keys 2, 3 and 5 after successive unrecognised gestures. The screenshots in `evidence/serial_logs/2026-11-04-serial-*.png` show its fallback messages. Some visible runs report MQTT disconnected, so those screenshots alone do not prove that Vespera received the effects.
 
 ## Computer-based checks recorded during archive recovery
 
 - `tests/host_syntax_check`: five syntax checks passed for older MKR and collector sketches; the corrupted collector copy failed as expected.
 - `tests/host_logic_tests`: the older threshold-wand logic passed 10/10 checks.
 
-These checks use simplified stand-in libraries. They are not Arduino builds or physical hardware tests, and they do not cover the visual-effects candidate.
+These use simplified stand-in libraries. They are not Arduino builds or physical hardware tests, and they do not cover the final adopted sketch.
 
-## Reproduction notes
+## Reproduction
 
-1. Install the board core and libraries listed in the main README.
-2. Install the matching Edge Impulse Arduino export and select the matching inference header.
-3. Create a local `arduino_secrets.h` from the example, then enter local Wi-Fi and MQTT credentials. Do not commit the real secrets file.
-4. Upload the sketch to the ESP32 Feather and open Serial Monitor at 115200 baud.
-5. Wait for the MQTT connected message, then switch OFF and ON to trigger a cast. Compare the serial classification with the corresponding Vespera response.
-6. If recording future evidence, save one complete representative serial capture and a short video of the luminaire response. A small number of representative records is enough; the project does not require logging every attempt.
-
-For a useful performance estimate in a future iteration, record a fixed number of attempts per gesture and report the denominator alongside correct recognitions. Do not infer an accuracy percentage from confidence scores.
+1. Install the ESP32 core, Adafruit MPU6050, Adafruit Unified Sensor and PubSubClient.
+2. Install the MAGIC Edge Impulse Arduino export. Do not install MAGIC2 alongside it for this sketch.
+3. Create a local `arduino_secrets.h` from the example and add the Wi-Fi/MQTT credentials.
+4. Upload `firmware/final/SPELLBOUND_Final.ino` to the ESP32 Feather and open Serial Monitor at 115200 baud.
+5. Wait for the MQTT connected message, then press the button or send `g`. Use `1`–`6` to preview effects and `o` to turn lights off.
+6. To evidence this exact final build, save one representative complete serial capture and a short video of Vespera responding. Do not use the earlier fallback screenshots as evidence of behavior in this final sketch.

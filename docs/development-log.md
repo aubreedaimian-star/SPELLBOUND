@@ -38,3 +38,7 @@ Dates and times are the files' last-saved times (London time). They show when a 
 **v4 run:** one author-reported on-device classification of Ascendio with a confidence score of 0.9922, followed by `[SPELL] CAST: Ascendio`. Wi-Fi failed during this run, so MQTT delivery and lighting were not tested. This is one inference, not a measure of accuracy. [seen: author-reported serial lines, `evidence/serial_logs/`]
 
 No serial logs or videos from the earlier 2 Nov sketches were found.
+
+
+## 4 Nov: final adopted MAGIC sketch
+The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted version. It uses the MAGIC export, a momentary button press, 50 Hz × 2 s capture, and acceleration in m/s². `ci` turns the lights off; low-confidence recognition gives a red retry cue and does not trigger the earlier candidate's fallback sequence. The source file is retained as supplied. The serial screenshots in `evidence/serial_logs/2026-11-04-serial-*.png` show fallback output from the earlier candidate, so they are not evidence that this exact final file was flashed.
