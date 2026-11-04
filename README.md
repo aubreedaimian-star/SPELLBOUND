@@ -40,6 +40,7 @@ Exact library names, model header, board selection and luminaire access must mat
 
 ## Project documentation
 
+- [Design process and system overview](docs/design-process.md)
 - [Testing and evidence](docs/testing.md)
 - [Known issues and setup notes](docs/known-issues.md)
 - [Code inventory and provenance](docs/code-inventory.md)
