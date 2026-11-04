@@ -97,6 +97,11 @@ const char* SPELL_NAMES[] = {
 constexpr int SPELL_COUNT = 6;
 constexpr int SPELL_CI = 1;
 
+// 模型类别也要和咒语列表一样多，装错导出时编译就会提醒。
+// The model label count must match the spell list, so a wrong export fails at compile time.
+static_assert(EI_CLASSIFIER_LABEL_COUNT == SPELL_COUNT,
+              "Model label count mismatch - check the MAGIC export");
+
 // ==================================================
 // 4. MQTT / Vespera
 // ==================================================

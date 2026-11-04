@@ -18,9 +18,11 @@ The physical interaction uses a button as a deliberate “cast” action. Holdin
 | MQTT | Carries RGB frame data from the ESP32 to the luminaire |
 | Vespera #11 | Shows the capture cue, selected animation, and final held frame |
 
-The intended data path is:
+The final adopted sketch follows this path:
 
-`button → 100 IMU samples at 50 Hz → classifier → spell/fallback choice → MQTT RGB frames → Vespera`
+`button press → 100 IMU samples at 50 Hz → MAGIC classifier → spell effect or ci off → MQTT RGB frames → Vespera`
+
+The earlier visual-effects candidate used the 2, 3, 5 fallback preview. The final adopted sketch instead gives a red retry cue when confidence is low. The retained serial screenshots show the earlier candidate, so they are labelled separately in the evidence index.
 
 The code assumes a 72-pixel luminaire and 216-byte RGB payloads. Its height-dependent effects also rely on the documented strip orientation; check that assumption against the physical installation.
 
@@ -30,7 +32,7 @@ The code assumes a 72-pixel luminaire and 216-byte RGB payloads. Its height-depe
 2. The next sketches tested MQTT colour control and a motion-threshold trigger.
 3. A data-collection sketch recorded IMU samples for Edge Impulse. The MKR1010 library build hit a CMSIS header compatibility issue.
 4. The data collector was moved to an ESP32 Feather, followed by gesture tests and a Vespera MQTT test.
-5. The integrated sketches combined the sensor, classifier, button and luminaire. A later visual-effects candidate adds a two-second countdown cue, spell-specific animation, a sequential fallback preview, and a final frame that remains visible.
+5. The integrated sketches combined the sensor, classifier, button and luminaire. The 3 Nov visual-effects candidate added a countdown cue and sequential fallback preview. The final adopted 4 Nov sketch uses the MAGIC export, changes the ci action to lights-off and gives a red cue on low confidence.
 
 The file-by-file record is in [development-log.md](development-log.md), and the source history is indexed in [code-inventory.md](code-inventory.md).
 
@@ -40,12 +42,10 @@ The project brings together embedded sensing, a trained gesture classifier, netw
 
 The earlier MKR attempt also exposed that a model export can depend on board-specific DSP headers. Moving to a supported board made it possible to continue integration, while keeping the inference sampling rate, axes and units consistent with the training pipeline remained an important implementation constraint.
 
-## Next iteration
+## What still needs checking
 
-A useful next version would:
-
-- confirm which exact sketch and model export are flashed for the demonstration;
-- record one full serial capture alongside a short video of the light output;
-- check the luminaire's actual pixel/strip orientation and tune the effects against it;
-- evaluate each gesture over a fixed, documented number of trials before reporting recognition performance;
-- keep Wi-Fi/MQTT credentials in a local ignored header and document only the setup steps.
+- Capture one representative serial log and a short Vespera video from the final adopted sketch.
+- Confirm Wi-Fi and MQTT stay connected during the two-second capture.
+- Compare the observed colour cues with the intended cyan, purple and red feedback.
+- If reporting model performance, state the model version, number of trials and denominator; do not treat confidence scores as accuracy.
+- Keep Wi-Fi/MQTT credentials in the ignored local header.

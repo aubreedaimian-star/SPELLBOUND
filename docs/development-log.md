@@ -42,3 +42,7 @@ No serial logs or videos from the earlier 2 Nov sketches were found.
 
 ## 4 Nov: final adopted MAGIC sketch
 The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted version. It uses the MAGIC export, a momentary button press, 50 Hz × 2 s capture, and acceleration in m/s². `ci` turns the lights off; low-confidence recognition gives a red retry cue and does not trigger the earlier candidate's fallback sequence. The source file is retained as supplied. The serial screenshots in `evidence/serial_logs/2026-11-04-serial-*.png` show fallback output from the earlier candidate, so they are not evidence that this exact final file was flashed.
+
+
+## 4 Nov: final adopted source and repository review
+The author supplied `firmware/final/SPELLBOUND_Final.ino` as the version adopted for the final iteration. It uses the MAGIC model, one-press capture, and turns the lights off for ci. The earlier visual-effects candidate and its fallback screenshots remain separate from this final source. A compile-time check was added to ensure the exported model has six labels, matching the spell list.
