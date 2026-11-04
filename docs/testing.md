@@ -6,17 +6,17 @@ This page distinguishes the final adopted sketch, earlier candidate screenshots,
 
 The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted version on 4 Nov 2026, followed by a further iteration of that same sketch. It uses MAGIC, 100 samples at 50 Hz, a 0.65 recognition threshold, a 350 ms cyan preparation cue, purple feedback for recognition, red retry feedback for low confidence, and turns the lights off for `ci` when `CI_TURNS_OFF` is true. Optional diagnostics report sample intervals and possible sensor saturation. A 35 dps gyro gate is enabled by default; automatic retry is disabled by default.
 
-The author reports that their prototype demonstrations worked, including gesture recognition and the light effects. No run-by-run count was recorded. The retained serial screenshots include fallback-demo messages from the earlier candidate, so they do not independently verify the final adopted source.
+The author confirms that this follow-up iteration was run on the prototype. The repository does not include a serial log, diagnostic measurements or per-feature results from that run, so the specific outcomes are not recorded here. No run-by-run count was recorded. The retained serial screenshots include fallback-demo messages from the earlier candidate, so they do not independently verify this iteration.
 
 The Oppugno excerpt at `evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt` records one prediction at 98.4% confidence. Its firmware version is not identified. A confidence value is not overall model accuracy.
 
 ## Final-version check sheet
 
-Use this short list for one representative final-build run. It is not necessary to log every attempt.
+The author confirms the follow-up version has been run. Use this short list to record a representative run's details if available; it is not necessary to log every attempt.
 
 | Check | Expected result | Record |
 |---|---|---|
-| Boot | MPU6050 detected; MAGIC project and six classes printed | Not yet linked to a final-build log |
+| Boot | MPU6050 detected; MAGIC project and six classes printed | Run confirmed by author; log not linked |
 | MQTT | Serial Monitor prints `[MQTT] Connected!` | Save a log excerpt if available |
 | Preparation cue | Cyan cue for 350 ms before sampling | Check once on the final device |
 | Recognised gesture | Class label and confidence print; purple cue; matching effect runs | Record the gesture and visible response |

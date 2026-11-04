@@ -17,7 +17,7 @@ The light gives feedback during use: cyan while capturing, purple when a gesture
 I started with an MKR WiFi 1010, then moved to an ESP32 after running into an Edge Impulse/CMSIS compile issue. I learned that the board, sample rate, axis order and units have to match the data used to train the model.
 
 **1:35–2:00 — Reflection**  
-A classifier confidence score is not the same as real-world accuracy. The project also depends on the physical sensor, Wi-Fi, MQTT and the luminaire all working together. The updated sketch adds timing and saturation diagnostics plus a low-motion filter; I still need to check their readings with the final build, and a threshold that is too high could reject a real gesture. My next check is to save one complete log and video from this exact final sketch.
+A classifier confidence score is not the same as real-world accuracy. The project also depends on the physical sensor, Wi-Fi, MQTT and the luminaire all working together. The updated sketch adds timing and saturation diagnostics plus a low-motion filter; I have run this updated version, but should save the diagnostic readings and visible outcomes from a representative run. A threshold that is too high could reject a real gesture, so the log should include whether each intended gesture passed.
 
 ## Live demonstration order
 

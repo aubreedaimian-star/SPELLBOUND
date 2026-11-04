@@ -6,7 +6,7 @@ The wand uses an MPU6050 motion sensor on an ESP32 Feather. Pressing the button 
 
 ## Final adopted source
 
-The author supplied [`SPELLBOUND_Final.ino`](firmware/final/SPELLBOUND_Final.ino) as the final adopted sketch on 4 Nov 2026; the attached follow-up is a further iteration of that same final version. It uses the MAGIC Edge Impulse export (`MAGIC_inferencing.h`) and acceleration in m/s². The retained serial screenshots show a different build: they include fallback-demo messages that do not exist in this final sketch. They are kept as development evidence, not presented as test logs from this exact file.
+The author supplied [`SPELLBOUND_Final.ino`](firmware/final/SPELLBOUND_Final.ino) as the final adopted sketch on 4 Nov 2026; the attached follow-up is a further iteration of that same final version. It uses the MAGIC Edge Impulse export (`MAGIC_inferencing.h`) and acceleration in m/s². The author confirms that this follow-up iteration was run on the prototype. No serial log or diagnostic measurements from that run are included in the repository. The retained serial screenshots show a different build: they include fallback-demo messages that do not exist in this final sketch. They are kept as development evidence, not presented as test logs from this exact file.
 
 The author reports that their prototype demonstrations worked, including gesture recognition and the light effects. A full run-by-run count was not recorded. The Oppugno excerpt at [serial evidence](evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt) is one inference at 98.4% confidence, not a model accuracy result; its exact firmware build was not recorded.
 
