@@ -1,9 +1,0 @@
-{
-  "additionalFiles": "",
-  "compiler.optimization_flags": "-Os",
-  "customBuildProperties": "",
-  "fqbn": "arduino:samd:mkrwifi1010",
-  "hardwareFolders": "%USERPROFILE%\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\samd\\1.8.14,%USERPROFILE%\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\samd\\1.8.14",
-  "otherLibrariesFolders": "%USERPROFILE%\\Documents\\Arduino\\libraries",
-  "sketchLocation": "%USERPROFILE%\\Documents\\Codex\\2026-10-29\\spellbound-fix-edge-impulse-arduino-deployment\\outputs\\spellbound_known_sample_test"
-}

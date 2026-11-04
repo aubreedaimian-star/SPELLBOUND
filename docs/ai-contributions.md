@@ -9,11 +9,11 @@ Hardware setup, IMU gesture data collection, Edge Impulse training, integration 
 | Item | Tool | Source of this information |
 |---|---|---|
 | `firmware/latest/v4/v4.ino` | ChatGPT (OpenAI) provided a complete integrated sketch in a conversation. The author then worked with the ESP32 hardware and tested gesture classification. | Author statement, 3 Nov. Which lines of the local file come from ChatGPT and which were changed by the author is not recorded, so authorship is not assigned line by line. |
-| CMSIS diagnosis, macro probe and `arm_math_types.h` patch (`experiments/03`, `experiments/04`, `evidence/ai_assisted_reports/`) | Codex (OpenAI) agent, 29 Oct | Codex task folder `Documents\Codex\2026-10-29\spellbound-fix-edge-impulse-arduino-deployment` and its report |
-| Known-sample test sketch and README (`tests/known_sample_test/`) | Codex agent, 29 Oct | Same task folder |
+| CMSIS diagnosis, macro probe and `arm_math_types.h` patch (`experiments/03`, `experiments/04`) | Codex (OpenAI) agent, 29 Oct | Codex task folder `Documents\Codex\2026-10-29\spellbound-fix-edge-impulse-arduino-deployment`; the separate report was removed from the current review tree |
+| Known-sample test sketch and README | Codex agent, 29 Oct | Compile-only according to the AI report; never uploaded and produced no predictions. Removed from the current review tree; the initial Git commit preserves the files. |
 | Windows toolchain migration (not included) | Codex agent, 31 Oct | Codex task folder and its report |
 | Recovery of this archive: inventory, hashes, credential removal, DataCollector repair (`REPAIR.diff`), host tests in `tests/host_*`, and the drafting of `README.md` and every document in `docs/` | Claude (Anthropic), 2–3 Nov | Produced in the recovery session and reviewed by the author |
-| Long-form analyses in `docs/detailed-analysis/` | Claude (Anthropic), 2 Nov | Each file is labelled at the top; not the author's own work |
+| Long-form analyses formerly in `docs/detailed-analysis/` | Claude (Anthropic), 2 Nov | AI-generated and not the author's own work. Removed from the current review tree; the initial Git commit preserves the files. |
 
 ## Awaiting author confirmation
 | Item | Note from the files (quoted, not interpreted) |

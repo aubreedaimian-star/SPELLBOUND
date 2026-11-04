@@ -17,7 +17,7 @@ Dates and times are the files' last-saved times (London time). They show when a 
 
 ## 29 Oct: Edge Impulse on the MKR1010 fails to compile
 - The exported library failed to compile for the MKR1010 (`__STATIC_FORCEINLINE`, then `__SSAT` errors). A workaround attempt that defines the macro in the sketch is in `experiments/02` (saved 29 Oct 16:03, before the AI agent's builds; authorship awaiting confirmation). [seen]
-- An AI coding agent (Codex) found the cause, a CMSIS version clash between the Arduino SAMD core and the Edge Impulse SDK, and patched one library header. After that it compiled, but nothing was uploaded. See `experiments/` and `evidence/ai_assisted_reports/`. [seen: build artefacts and report]
+- An AI coding agent (Codex) found the cause, a CMSIS version clash between the Arduino SAMD core and the Edge Impulse SDK, and patched one library header. After that it compiled, but nothing was uploaded. The probe and patch excerpts remain in `experiments/`; the AI-written report was removed from the current review tree. [seen: build artefacts; AI use is recorded in `ai-contributions.md`]
 
 ## 31 Oct to 1 Nov: switch to the ESP32 Feather
 - CP210x USB driver downloaded [seen]; ESP32 board support installed [reported by the AI migration agent].

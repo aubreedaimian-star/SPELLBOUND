@@ -1,3 +1,4 @@
+# Hashes for the initial Windows staging snapshot, before Git line-ending normalization and assessment curation.
 e4b0a16b7c92d72604e9d4129a5b792140046a32083a05f7bc76aa63750d0da3  ./.gitignore
 99c1b3c51265ba767cb0f9b582db166c224ec703821396e53a915416653785e7  ./README.md
 93e436c7eae1ec16b6cde1290e91778405dce5ac6a93a65680cb94ef5b4db74a  ./docs/ai-contributions.md

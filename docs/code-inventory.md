@@ -2,7 +2,9 @@
 
 Original SHA-256 hashes (first 16 characters) identify the files as found. Full hashes are in `evidence/SHA256SUMS_originals.txt`. `%USERPROFILE%` is the Windows user folder.
 
-## Included
+## Source inventory
+
+This table records the initial Windows staging snapshot. Files explicitly marked as removed are not in the current review tree. The original snapshot checksums are in `evidence/SHA256SUMS_staged.txt`; line-ending normalization means those hashes do not describe the current Git checkout.
 
 | Staged | Original | Last saved | SHA-256 (original) | Notes |
 |---|---|---|---|---|
@@ -21,7 +23,7 @@ Original SHA-256 hashes (first 16 characters) identify the files as found. Full 
 | `experiments/02_…/static_buffer.ino` | `D:\static_buffer\static_buffer.ino` | 29 Oct 16:03 | `698ac44ccfcec8ec` | Unchanged (macro workaround attempt; authorship awaiting confirmation) |
 | `experiments/03_cmsis_macro_probe/…` | `%USERPROFILE%\Documents\Codex\2026-10-29\…\work\cmsis_macro_probe` | 29 Oct 16:15 | `9f515e785c008397` | Unchanged (AI agent) |
 | `experiments/04_samd_cmsis_compat_patch/…` | `%USERPROFILE%\Documents\Arduino\libraries\MAGIC_inferencing\…\arm_math_types.h` | 29 Oct 16:29 | `d7f1f0b93c96ee85` | Excerpt, lines 84–131 (AI agent patch) |
-| `tests/known_sample_test/…/spellbound_known_sample_test.ino` | `%USERPROFILE%\Documents\Codex\2026-10-29\…\outputs\…` | 29 Oct 18:16 | `4b9bb82b18e0936b` | Unchanged (AI agent) |
+| Removed from current review tree: Codex-generated known-sample test | `%USERPROFILE%\Documents\Codex\2026-10-29\…\outputs\…` | 29 Oct 18:16 | `4b9bb82b18e0936b` | Compile-only, never uploaded; preserved in the initial Git commit |
 | `models/MAGIC_inferencing_v1/*` | `%USERPROFILE%\Documents\Arduino\libraries\MAGIC_inferencing` | 29 Oct 15:41 | `a85602731375cc04` | Metadata and compiled model only (hash = model .cpp) |
 | `models/MAGIC2_inferencing_v3/*` | `%USERPROFILE%\Documents\Arduino\libraries\MAGIC2_inferencing` | 02 Nov 12:30 | `94c485e3578fc913` | Metadata and compiled model only (hash = model .cpp) |
 | `evidence/original_as_found/SPELLBOUND_DataCollector.CORRUPTED_AS_FOUND.ino.txt` | `D:\CE014\SPELLBOUND_DataCollector\SPELLBOUND_DataCollector.ino` | 29 Oct 18:49 | `4e10f846955ab42a` | Byte-identical, renamed .txt |

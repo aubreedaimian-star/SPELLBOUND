@@ -14,7 +14,7 @@ The wand uses an MPU6050 motion sensor on an ESP32 Feather. In the latest sketch
 - [Testing status and evidence](docs/testing.md) separates the single reported classification from features not verified on hardware.
 - [Known issues](docs/known-issues.md) lists the current Wi-Fi and MQTT configuration gaps.
 - [Code inventory](docs/code-inventory.md) records the source files and their provenance.
-- [AI contributions](docs/ai-contributions.md) identifies AI-assisted code and documentation. The detailed analyses in `docs/detailed-analysis/` are AI-generated and are not the author's own work.
+- [AI contributions](docs/ai-contributions.md) identifies AI-assisted code and documentation. AI-generated long-form analyses and an unused test sketch were removed from the current review tree; their use remains disclosed, and the initial Git commit preserves the earlier files.
 
 ## Development history
 | Date | Step |
@@ -40,4 +40,4 @@ ESP32 Feather (HUZZAH32) · MPU6050 on I²C (SDA 23, SCL 22) · push button on G
 `firmware/latest` · `firmware/history` (earlier sketches, in order) · `experiments` (MKR1010 compile problem) · `models` · `tests` · `evidence` · `docs`
 
 ## Who did what
-I did the practical work: hardware setup, IMU gesture data collection, Edge Impulse training, integration and debugging. AI tools also contributed. The v4 sketch was developed with ChatGPT assistance; a Codex agent diagnosed the MKR1010 compile problem; Claude helped recover and document this archive. The details, including sketches whose authorship is still being confirmed, are in `docs/ai-contributions.md`. The longer analyses in `docs/detailed-analysis/` were written by Claude and are not my own work.
+I did the practical work: hardware setup, IMU gesture data collection, Edge Impulse training, integration and debugging. AI tools also contributed. The v4 sketch was developed with ChatGPT assistance; a Codex agent diagnosed the MKR1010 compile problem; Claude helped recover and document this archive. The details, including sketches whose authorship is still being confirmed and AI-generated material removed from the current review tree, are in `docs/ai-contributions.md`.

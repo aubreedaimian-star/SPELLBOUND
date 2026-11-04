@@ -4,11 +4,10 @@
 |---|---|---|---|
 | `host_syntax_check/` | Parses each sketch on a PC with stub Arduino headers | Yes, 2 Nov 2026 | 5 PASS; corrupted original FAILs as expected (`RESULT_2026-11-02.txt`) |
 | `host_logic_tests/` | Compiles `firmware/history/03` on a PC with an injectable fake I²C bus; checks thresholds, payload and colours | Yes, 2 Nov 2026 | 10/10 PASS (`RESULT_2026-11-02.txt`) |
-| `known_sample_test/` | On-board Edge Impulse inference on one fixed recorded sample (AI-written) | **Compile only (AI-reported); never uploaded** | No predictions exist |
 
-The stubs in `host_logic_tests/stubs/` are deliberately simplified fakes. Passing host tests says nothing about timing, I²C electrical behaviour, Wi-Fi, MQTT or the lamp. Hardware tests H1–H7 are listed in `docs/detailed-analysis/testing-report.md` (written by Claude).
+The stubs in `host_logic_tests/stubs/` are deliberately simplified fakes. Passing host tests says nothing about timing, I²C electrical behaviour, Wi-Fi, MQTT or the lamp. Hardware test needs and current gaps are listed in `docs/testing.md`.
 
-The host-side checks and stubs in `host_syntax_check/` and `host_logic_tests/` were written by Claude (Anthropic) during the recovery on 2 Nov 2026. The known-sample test was written by a Codex agent on 29 Oct.
+The host-side checks and stubs in `host_syntax_check/` and `host_logic_tests/` were written by Claude (Anthropic) during the recovery on 2 Nov 2026. They are AI-assisted checks, not hardware tests. The unused Codex-generated known-sample sketch was removed from the current review tree; its use remains recorded in `docs/ai-contributions.md`.
 
 ```sh
 sh tests/host_syntax_check/run.sh
