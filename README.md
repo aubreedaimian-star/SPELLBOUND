@@ -2,42 +2,65 @@
 
 A gesture-controlled wand for the CASA0014 Vespera luminaire (UCL Connected Environments, 2026).
 
-The wand uses an MPU6050 motion sensor on an ESP32 Feather. In the latest sketch, holding a button records a 2-second movement. On release, an Edge Impulse model classifies it as one of six spells, and the sketch is written to send a matching light animation to Vespera #11 over MQTT.
+The wand uses an MPU6050 motion sensor on an ESP32 Feather. A button starts a two-second movement capture. On release, an Edge Impulse model classifies the movement as one of six spells; the ESP32 then sends RGB animation frames to Vespera #11 over MQTT.
 
-## Where it stands (3 Nov 2026)
-- **Latest sketch:** `firmware/latest/v4/v4.ino`
-- **Observed on hardware:** one author-reported on-device classification of *Ascendio* with a confidence score of 0.9922 (`evidence/serial_logs/`). This is one inference. It is not a measure of model accuracy and does not show MQTT delivery or a lighting response.
-- **Network:** Wi-Fi failed during that recorded run, so MQTT delivery and the lighting response have not been tested.
-- **Written but not yet tested on hardware:** MQTT publishing, the spell animations, and the feedback flashes.
+## Demonstration status
 
-## Project notes
-- [Testing status and evidence](docs/testing.md) separates the single reported classification from features not verified on hardware.
-- [Known issues](docs/known-issues.md) lists the current Wi-Fi and MQTT configuration gaps.
-- [Code inventory](docs/code-inventory.md) records the source files and their provenance.
-- [AI contributions](docs/ai-contributions.md) identifies AI-assisted code and documentation. AI-generated long-form analyses and an unused test sketch were removed from the current review tree; their use remains disclosed, and the initial Git commit preserves the earlier files.
+The author reports that the physical prototype demonstrations worked, including gesture recognition and the light effects. A full run-by-run count was not recorded, so this is a project report rather than a measured success rate.
+
+One author-supplied serial excerpt records an Oppugno prediction at 98.4% confidence. It is one inference and must not be read as overall model accuracy: [serial excerpt](evidence/serial_logs/2026-11-04_oppugno_AUTHOR_REPORTED.txt).
+
+The repository contains the earlier integrated sketch at `firmware/latest/v4/v4.ino` and a later visual-effects candidate at `firmware/candidate/SPELLBOUND_Visual_Effects.ino`. The candidate was copied from the author's latest saved Library sketch (3 Nov); the author has not confirmed that this exact file is the version flashed for the reported demo. It includes `MAGIC_inferencing.h`; use the header and model export that match the trained Edge Impulse project before compiling.
+
+## How the system works
+
+1. The button starts one capture; the user performs a gesture while the IMU records 100 samples at 50 Hz.
+2. The Edge Impulse model returns class probabilities for six labels.
+3. A recognised spell selects its matching animation. If recognition fails, the visual-effects candidate advances through demo keys 2, 3 and 5 on successive failures.
+4. The ESP32 publishes 72 RGB pixels (216 bytes) to the Vespera MQTT topic. The final animation frame stays lit until the next cast or an explicit off command.
+
+The installation layout assumed by the candidate is 12 strips of 6 LEDs, with pixel 0 at the top and pixel 5 at the bottom in each strip. Confirm the physical layout before relying on height-dependent effects.
+
+## Hardware and wiring
+
+- ESP32 Feather (HUZZAH32)
+- MPU6050 over I²C: SDA GPIO23, SCL GPIO22
+- Latching switch/button: GPIO27 to GND, configured with `INPUT_PULLUP`
+- Vespera #11 over MQTT: `mqtt.cetools.org:1884`, topic `student/CASA0014/luminaire/11`
+
+## Build and run
+
+1. Install the ESP32 Arduino core, Adafruit MPU6050, Adafruit Unified Sensor and PubSubClient libraries.
+2. Install the Edge Impulse Arduino library exported for the model used to collect/train the gestures. The model package is not fully vendored here; see [models/README.md](models/README.md).
+3. Configure local Wi-Fi and MQTT credentials in `arduino_secrets.h` using the example header in the relevant sketch folder. Keep the real secrets file out of Git.
+4. Open the sketch in Arduino IDE and select the matching board and serial port. Open Serial Monitor at 115200 baud.
+5. Confirm the serial output reports MQTT connected before expecting Vespera to show an effect. Switch OFF then ON for a cast; the candidate also accepts serial preview commands 1–6 and off command `o`.
+
+Exact library names, model header, board selection and luminaire access must match the local setup. The candidate's header currently says `MAGIC_inferencing.h`, while earlier project records refer to MAGIC2; select the correct export deliberately rather than renaming headers blindly.
+
+## Project documentation
+
+- [Testing and evidence](docs/testing.md)
+- [Known issues and setup notes](docs/known-issues.md)
+- [Code inventory and provenance](docs/code-inventory.md)
+- [Development log](docs/development-log.md)
+- [AI contributions](docs/ai-contributions.md)
+- [Edge Impulse training records](evidence/edge_impulse/README.md)
+- [Model package notes](models/README.md)
 
 ## Development history
+
 | Date | Step |
 |---|---|
-| 12 Oct | Wi-Fi web page toggling the MKR WiFi 1010's LED |
-| 26 Oct | MQTT colour test to Vespera; then a motion-threshold version with the MPU6050 |
-| 29 Oct | 50 Hz data collector for Edge Impulse; first model (MAGIC); the library would not compile for the MKR1010 until a CMSIS header was patched |
-| 1 Nov | Data collector ported to the ESP32 Feather |
-| 2 Nov | MAGIC2 model; serial-triggered gesture tests; ESP32 → Vespera colour test; integrated and button versions; v4 |
+| 12 Oct | Wi-Fi web page toggling the MKR WiFi 1010 LED |
+| 26 Oct | MQTT colour test to Vespera; motion-threshold wand |
+| 29 Oct | 50 Hz data collector and first Edge Impulse model; library compile issue on MKR1010 |
+| 1 Nov | Data collector ported to ESP32 Feather |
+| 2 Nov | MAGIC2 model; serial-triggered gesture tests; ESP32 to Vespera test; integrated and button sketches |
+| 3 Nov | Visual-effects candidate with capture cue, spell animations and fallback sequence |
 
-Dates are the files' last-saved times. Full notes are in `docs/development-log.md`.
+Dates follow the available files and records; see the development log for more context.
 
-## Hardware
-ESP32 Feather (HUZZAH32) · MPU6050 on I²C (SDA 23, SCL 22) · push button on GPIO27 to GND · Vespera #11 via `mqtt.cetools.org:1884`, topic `student/CASA0014/luminaire/11` (72 LEDs × RGB = 216 bytes).
+## Contributions and AI use
 
-## Running v4
-1. Use the Arduino IDE with the ESP32 core, plus the Adafruit MPU6050, Adafruit Unified Sensor and PubSubClient libraries and the `MAGIC2_inferencing` export. The full Edge Impulse library is **not included** in this repository; see `models/README.md`.
-2. Open Serial Monitor at 115200. Hold the button, make the gesture, then release.
-
-**Network configuration is incomplete.** v4 includes `arduino_secrets.h` but does not use it: the Wi-Fi settings are written directly in the sketch (with an empty password), and MQTT connects without credentials. Copying `arduino_secrets.example.h` is therefore not enough to connect. See `docs/known-issues.md`. Never commit a real `arduino_secrets.h`; it is gitignored.
-
-## Folders
-`firmware/latest` · `firmware/history` (earlier sketches, in order) · `experiments` (MKR1010 compile problem) · `models` · `tests` · `evidence` · `docs`
-
-## Who did what
-I did the practical work: hardware setup, IMU gesture data collection, Edge Impulse training, integration and debugging. AI tools also contributed. The v4 sketch was developed with ChatGPT assistance; a Codex agent diagnosed the MKR1010 compile problem; Claude helped recover and document this archive. The details, including sketches whose authorship is still being confirmed and AI-generated material removed from the current review tree, are in `docs/ai-contributions.md`.
+The author reports doing the hardware setup, gesture-data collection, Edge Impulse training, integration and debugging. AI tools also contributed to code and documentation. The [AI contributions record](docs/ai-contributions.md) describes known assistance and uncertain authorship. Historical sketches are retained as development records; comments and style are not used to infer who wrote them.
