@@ -4,58 +4,67 @@
 #include <PubSubClient.h>
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
-#include <MAGIC_inferencing.h>  // 如果你当前能正常工作的草稿使用 MAGIC2_inferencing.h，就只改这一行。 / If your WORKING sketch uses MAGIC2_inferencing.h, change ONLY this line.
+#include <MAGIC_inferencing.h>  // 如果你正在用的草稿是 MAGIC2_inferencing.h，就只改这一行。 / If your WORKING sketch uses MAGIC2_inferencing.h, change ONLY this line.
 #include <math.h>
 #include <string.h>
 #include <esp_system.h>
 #include "arduino_secrets.h"
 
-// SPELLBOUND：ESP32 Feather、MPU6050、Edge Impulse 和 Vespera #11。
+// SPELLBOUND：ESP32 Feather 接 MPU6050，用 Edge Impulse 识别，再控制 Vespera #11。
 // SPELLBOUND: ESP32 Feather + MPU6050 + Edge Impulse + Vespera #11
-// IMU 设置、输入单位和轴顺序要和成功的手势测试保持一致。
+// 这几个 IMU 设置别随便改，要和手势训练、测试时用的一样。
 // Keep IMU settings, input units, and axis order identical to the successful gesture test.
+// ==================================================
+// 1. Hardware and switch / 硬件接线和开关
+// ==================================================
 constexpr int SDA_PIN = 23;
 constexpr int SCL_PIN = 22;
-// 这是自锁开关：GPIO27 接到 GND，程序用 INPUT_PULLUP。
+// 按钮一边接 GPIO27，另一边接 GND；这里用内部上拉。
 // Toggle (latching) switch: GPIO27 to GND (INPUT_PULLUP).
-// 开关从 OFF 拨到 ON 时施放一次；想再施放，就先拨回 OFF，再拨到 ON。
+// 从 OFF 拨到 ON 就施法一次。想再来一次，先拨回 OFF，再拨到 ON。
 // Switching OFF -> ON starts one cast. To cast again: switch OFF, then ON.
-// 把这里改成实际接线使用的 GPIO。
+// 接线用的不是这个脚的话，就把这里改成实际的 GPIO。
 // Change this to the actual GPIO you wired.
 constexpr int BUTTON_PIN = 27;
 constexpr uint32_t BUTTON_DEBOUNCE_MS = 50;
-// 开关打开时引脚的电平。GPIO27 接开关再接 GND 时，ON 对应 LOW。
+// 按现在这个接法，开关拨到 ON 时读到 LOW。
 // Pin level when the switch is ON. Wired GPIO27 -> switch -> GND: ON = LOW.
-// 如果实际是在拨到 OFF 时触发，就把这里改成 HIGH。
+// 如果发现拨到 OFF 才触发，就把这个值改成 HIGH。
 // If casting starts when you switch OFF instead, change this to HIGH.
 constexpr bool SWITCH_ON_LEVEL = LOW;
-// false 表示只在自锁开关拨到 ON 时施放；拨回 OFF 不施放。
+// false：只在拨到 ON 的时候施法，拨回 OFF 不触发。
 // false = cast only when the latching button turns ON (press again = OFF, no cast)
-// true 表示每次状态变化都施放，ON 和 OFF 都会触发。
+// true：ON 和 OFF 每次切换都会施法。
 // true  = cast on EVERY press (both ON and OFF)
 constexpr bool CAST_ON_EVERY_PRESS = false;
 
-// Vespera 上的施法提示按这个顺序显示：
+// 灯上的提示顺序是这样：
 // Cast cue on Vespera:
-// 1）先闪两次，提示开始。
+// 1）先闪两下，告诉人要开始施法了。
 // 1) flash twice (start warning)
-// 2）72 个灯先全部亮起，再在两秒采样期间逐个熄灭。
+// 2）72 个灯先全亮，采样的两秒里再一颗一颗灭掉。
 // 2) all 72 LEDs on, then they go out one by one over the 2 s capture
-// 3）灯全灭表示采样结束，接着显示识别到的咒语或备用演示。
+// 3）灯全灭就表示采样结束，接着播识别到的效果，或者备用演示。
 // 3) all off = input finished; recognised spell or fallback demo follows
+// ==================================================
+// 2. Capture settings / 采样提示和参数
+// ==================================================
 constexpr uint8_t CUE_R = 10, CUE_G = 185, CUE_B = 230;   // 青色。 / cyan
-constexpr int COUNTDOWN_EVERY_N_SAMPLES = 4;             // 每 80 毫秒更新一次，共 25 步。 / update every 80 ms (25 steps)
+constexpr int COUNTDOWN_EVERY_N_SAMPLES = 4;             // 每 80 ms 更新一次，刚好分成 25 步。 / update every 80 ms (25 steps)
 constexpr int SAMPLE_RATE = 50;
 constexpr int SAMPLE_COUNT = 100;
 constexpr int AXES = 6;
 constexpr uint32_t SAMPLE_INTERVAL_US = 1000000UL / SAMPLE_RATE;
 constexpr float MIN_CONFIDENCE = 0.65f;
-// 根据之前的训练样本，重力约为 9.8；这里的加速度单位是 m/s²。
+// 之前的训练样本里重力大约是 9.8，所以加速度单位用 m/s²。
 // Based on the earlier training samples (gravity approximately 9.8): acceleration in m/s^2.
-// 注意：如果能正常识别的草稿把这个值设为 true，先核对训练数据的单位再改。
+// 这里先别凭感觉改。如果正常识别的版本用的是 true，先确认训练数据单位。
 // IMPORTANT: If your working inference sketch used true, check training units before changing.
 constexpr bool ACCEL_IN_G = false;
 
+// ==================================================
+// 3. Network and Vespera / 网络和 Vespera
+// ==================================================
 const char* MQTT_HOST = "mqtt.cetools.org";
 constexpr uint16_t MQTT_PORT = 1884;
 const char* MQTT_TOPIC = "student/CASA0014/luminaire/11";
@@ -109,9 +118,9 @@ static bool publishPixels() {
   return mqtt.publish(MQTT_TOPIC, pixels, sizeof(pixels));
 }
 
-// Vespera #11 也用来显示魔杖按钮和系统状态。
+// Vespera #11 也顺便显示魔杖现在的状态。
 // Vespera #11 doubles as the wand's button/status indicator.
-// 每条消息仍是 72 × 3，也就是 216 字节的原始 RGB 数据。
+// 每次还是发 72 × 3，也就是 216 字节的 RGB 数据。
 // All messages remain 72 * 3 = 216 bytes of raw RGB data.
 static bool showSolid(uint8_t r, uint8_t g, uint8_t b) {
   for (int i = 0; i < LED_COUNT; ++i) pixel(i, r, g, b);
@@ -129,9 +138,9 @@ static void flashFeedback(uint8_t r, uint8_t g, uint8_t b) {
   }
 }
 
-// 倒计时灯条会点亮前 `lit` 个灯，其余熄灭。
+// 倒计时就是前面 `lit` 颗灯亮着，后面的灭掉。
 // Countdown bar: the first `lit` LEDs on, the rest off.
-// 采样开始时 lit 是 72；两秒结束时变成 0。
+// 刚开始 lit 是 72；两秒采样结束时变成 0。
 // lit = 72 at the start of capture, 0 when the 2 s are over.
 static bool showCountdown(int lit) {
   for (int i = 0; i < LED_COUNT; ++i) {
@@ -170,10 +179,13 @@ static void serviceNetwork() {
   }
 }
 
-// 这里有 6 种效果；每帧 MQTT 消息只发送 216 字节的 RGB 数据。
+// 这里一共 6 种灯效，每一帧 MQTT 消息还是 216 字节。
 // 6 effects. Animated frames use only 216 raw RGB bytes per MQTT message.
-// 这里按 12 条灯带、每条 6 颗灯来计算；每条灯带从顶部 0 编到底部 5。
+// 这里按 12 条灯带、每条 6 颗来算；每条从上往下编号 0 到 5。
 // Layout assumption: 12 strips x 6 LEDs, indexed top=0 to bottom=5 in each strip.
+// ==================================================
+// 4. Light effects / 灯光效果
+// ==================================================
 static void renderEffect(int spell, uint32_t frame) {
   float t = frame * 0.38f;
   for (int i = 0; i < LED_COUNT; ++i) {
@@ -182,9 +194,9 @@ static void renderEffect(int spell, uint32_t frame) {
     int r = 0, g = 0, b = 0;
     switch (spell) {
       case 0: {
-        // Ascendio：柔和的青色光波向上移动，后面留下一段渐隐的光。
+        // Ascendio：青色光从下往上走，后面留一点慢慢淡掉的光。
         // Ascendio: a soft cyan spell wave travels upward with a fading tail.
-        // 每条灯带的编号是顶部 0、底部 5；所以这里把高度 0 当作底部。
+        // 每条灯带是上面 0、下面 5，所以这里的底部高度记成 0。
         // Each strip is indexed top=0 to bottom=5; height 0 is the bottom.
         constexpr int LEDS_PER_STRIP = 6;
         const int rowInStrip = i % LEDS_PER_STRIP;
@@ -192,13 +204,13 @@ static void renderEffect(int spell, uint32_t frame) {
         float glow = 0.0f;
 
         if (frame < 3UL) {
-          // 光先在底部聚起来，再开始上升。
+          // 先在底部聚一点光，再让它往上走。
           // A small pool of light gathers at the bottom before rising.
           if (rowInStrip == 5) {
             glow = 0.16f + 0.12f * frame;
           }
         } else if (frame <= 15UL) {
-          // 较亮的光头从底部往上走，后面跟着较柔和的光尾。
+          // 亮的部分从下往上走，后面跟一条柔一点的光尾。
           // The bright head moves bottom-to-top; a softer trail follows it.
           const float progress = (float)(frame - 3UL) / 12.0f;
           const float head = progress * (LEDS_PER_STRIP - 1);
@@ -209,7 +221,7 @@ static void renderEffect(int spell, uint32_t frame) {
                                  : 0.0f;
           glow = max(core, tail);
         } else {
-          // 光波到顶后稍微闪动一下，然后慢慢淡出。
+          // 光到顶之后再轻轻闪一下，然后淡出去。
           // Brief shimmer after the wave reaches the top, then fade away.
           const float fade = clamp01(1.0f - (float)(frame - 16UL) / 9.0f);
           const float shimmer = 0.70f + 0.30f * sinf(t * 2.0f + height);
@@ -223,10 +235,10 @@ static void renderEffect(int spell, uint32_t frame) {
         break;
       }
       case 1: {
-        // ci：一次性的阿瓦达风格效果，使用克制的翠绿和薄荷绿。
+        // ci：阿瓦达效果只播一轮，颜色用偏柔和的翠绿和薄荷绿。
         // ci: one-shot Avada-style cast in a restrained emerald/mint palette.
         if (frame <= 2UL) {
-          // 较深的玉绿色能量先在装置底部聚集。
+          // 先让比较深的玉绿色在灯带底部聚起来。
           // Deep jade charge gathers at the bottom of the installation.
           const float charge = 0.25f + 0.15f * frame;
           const float baseGlow = (i < 7) ? (1.0f - i / 8.0f) : 0.0f;
@@ -234,7 +246,7 @@ static void renderEffect(int spell, uint32_t frame) {
           g = (int)(32.0f + 105.0f * charge * baseGlow);
           b = (int)(24.0f + 64.0f * charge * baseGlow);
         } else if (frame <= 10UL) {
-          // 薄荷绿光束向上穿过灯带，后面带着较柔和的玉绿色光尾。
+          // 薄荷绿的光束往上冲，后面带一点玉绿色的光尾。
           // Mint-green bolt travels upward with a softer jade tail.
           const float travel = (float)(frame - 3UL) / 7.0f;
           const float head = travel * (LED_COUNT - 1);
@@ -247,14 +259,14 @@ static void renderEffect(int spell, uint32_t frame) {
           g = (int)(32.0f + 176.0f * core + 112.0f * tail);
           b = (int)(22.0f + 108.0f * core + 58.0f * tail);
         } else if (frame <= 13UL) {
-          // 撞击时闪出柔和的薄荷绿，亮度够明显但不使用荧光纯绿。
+          // 撞击时闪一下薄荷绿，亮一些，但不弄成刺眼的荧光绿。
           // Soft mint impact flash, bright but not pure neon green.
           const float flash = (frame == 11UL) ? 1.0f : (frame == 12UL ? 0.72f : 0.42f);
           r = (int)(118.0f * flash);
           g = (int)(232.0f * flash);
           b = (int)(166.0f * flash);
         } else {
-          // 偏暗的翠绿余光逐渐淡出。
+          // 最后留一点暗翠绿，再慢慢淡掉。
           // Muted emerald afterglow fades away.
           const float fade = clamp01(1.0f - (float)(frame - 14UL) / 11.0f);
           const float residual = 0.25f + 0.75f * (0.5f + 0.5f * sinf(x * 14.0f + t));
@@ -264,7 +276,7 @@ static void renderEffect(int spell, uint32_t frame) {
         }
         break;
       }
-      case 2: { // Incendio：用暖琥珀色和柔和金色做火焰，并让亮度轻轻变化。 / Incendio: warm amber and soft gold flame, with gentle variation
+      case 2: { // Incendio：用暖琥珀和柔和金色做火焰，亮度会轻轻变化。 / Incendio: warm amber and soft gold flame, with gentle variation
         int noise = (int)((i * 47UL + frame * 71UL + (i * frame * 7UL)) % 101UL);
         float turbulence = 0.35f + 0.65f * noise / 100.0f;
         float flame = turbulence * (0.55f + 0.45f * (0.5f + 0.5f * sinf(t * 1.35f + x * 12.0f)));
@@ -273,14 +285,14 @@ static void renderEffect(int spell, uint32_t frame) {
         b = 24 + (int)(32 * flame);
         break;
       }
-      case 3: { // Leviosa：蓝色和淡紫色交替的月光波纹。 / Leviosa: blue/lavender moonlight wave
+      case 3: { // Leviosa：蓝色和淡紫色的月光波纹。 / Leviosa: blue/lavender moonlight wave
         float breath = 0.5f + 0.5f * sinf(t * 0.55f + x * 9.0f);
         r = 35 + (int)(105 * breath);
         g = 60 + (int)(95 * (1.0f - breath));
         b = 125 + (int)(100 * breath);
         break;
       }
-      case 4: { // Oppugno：几道翠绿色光带依次追逐移动。 / Oppugno: chasing emerald streaks
+      case 4: { // Oppugno：几条翠绿光带追着跑。 / Oppugno: chasing emerald streaks
         int travelling = (int)(frame * 5UL % LED_COUNT);
         int distance = abs(i - travelling);
         float streak = clamp01(1.0f - distance / 11.0f);
@@ -289,7 +301,7 @@ static void renderEffect(int spell, uint32_t frame) {
         b = 34 + (int)(85 * (1.0f - streak));
         break;
       }
-      case 5: { // Stupefy：紫色和玫瑰色的电击波纹。 / Stupefy: violet / rose electric shockwaves
+      case 5: { // Stupefy：紫色和玫瑰色的电光一圈圈荡开。 / Stupefy: violet / rose electric shockwaves
         float shock = ((frame % 8UL) < 2UL) ? 1.0f : 0.42f;
         float ripple = 0.5f + 0.5f * sinf(x * 19.0f - t * 1.8f);
         r = (int)((84 + 140 * ripple) * shock);
@@ -304,7 +316,7 @@ static void renderEffect(int spell, uint32_t frame) {
   }
 }
 
-// 手势没有识别出来时，按顺序播放预览 2、3、5。
+// 手势没识别出来时就按顺序演示 2、3、5。
 // On an unrecognised gesture, play preview keys 2 -> 3 -> 5 in order.
 static const int FALLBACK_SPELLS[] = {1, 2, 4};
 static constexpr uint8_t FALLBACK_SPELL_COUNT = 3;
@@ -328,13 +340,16 @@ static void updateEffect() {
   renderEffect(activeSpell, frameIndex++);
   if (!publishPixels()) Serial.println("[MQTT] Frame publish failed");
   if ((uint32_t)(now - effectStarted) >= EFFECT_DURATION_MS) {
-    // 最后一帧会保持显示，直到下一次施法或串口发送 o。
+    // 最后一帧先留着，等下次施法或者串口发 o 再关。
     // Freeze the final frame until the next cast or an explicit serial 'o'.
     effectActive = false;
     Serial.println("[SPELL] Effect complete; final frame held.");
   }
 }
 
+// ==================================================
+// 5. Capture and recognition / 采集和识别
+// ==================================================
 static int captureAndClassify() {
   if (EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE != SAMPLE_COUNT * AXES) {
     Serial.println("[ERROR] Model input size != 600. Check model export.");
@@ -342,7 +357,7 @@ static int captureAndClassify() {
   }
   Serial.println("[IMU] Capturing 2 seconds. Cast NOW!");
   const bool cueOn = mqtt.connected();
-  if (cueOn) showCountdown(LED_COUNT);   // 灯条全亮表示现在开始采样。 / full bar = capture starts now
+  if (cueOn) showCountdown(LED_COUNT);   // 灯条全亮，就表示现在开始采样。 / full bar = capture starts now
   uint32_t nextSample = micros();
   uint32_t lateSamples = 0;
   for (int n = 0; n < SAMPLE_COUNT; ++n) {
@@ -363,9 +378,9 @@ static int captureAndClassify() {
     features[offset + 4] = g.gyro.y * GYRO_RAD_TO_DEG;
     features[offset + 5] = g.gyro.z * GYRO_RAD_TO_DEG;
 
-    // 倒计时灯会逐个熄灭。每次读完一个样本就发送灯光更新，
+    // 倒计时灯会一颗颗灭。每读完一个样本就更新一次，
     // Countdown: LEDs go out one by one. Sent right after a sample is read,
-    // 这样 MQTT 发布可以利用下一个样本到来前的空档。
+    // 尽量把 MQTT 发送放在下一个样本到来前的空档里。
     // so the publish happens in the idle time before the next sample.
     const int done = n + 1;
     if (cueOn && (done % COUNTDOWN_EVERY_N_SAMPLES == 0 || done == SAMPLE_COUNT)) {
@@ -429,15 +444,18 @@ static int captureAndClassify() {
   return -1;
 }
 
-// 开关拨到 ON 或串口输入 g 时开始施法。
+// 开关拨到 ON，或者串口输入 g，都会从这里开始。
 // Triggered by switching ON or serial 'g'.
+// ==================================================
+// 6. Casting / 施法流程
+// ==================================================
 static void castSpell() {
-  // 先停掉上一个灯效，免得它覆盖采样提示。
+  // 先停掉上一个灯效，免得采样提示刚出来又被盖住。
   // Prevent an older effect from overwriting the capture cue.
   effectActive = false;
   Serial.println("[SWITCH] Spell triggered: flash x2, then LEDs count down 2 s");
   if (mqtt.connected()) {
-    flashFeedback(CUE_R, CUE_G, CUE_B);   // 开始提示：闪两次。 / start warning: flashes twice
+    flashFeedback(CUE_R, CUE_G, CUE_B);   // 开始前闪两下。 / start warning: flashes twice
   } else {
     Serial.println("[LIGHT] Cue unavailable (MQTT disconnected); capturing anyway");
   }
@@ -448,7 +466,7 @@ static void castSpell() {
     if (mqtt.connected()) flashFeedback(155, 55, 235);
     startSpell(spell);
   } else {
-    // 每次识别失败就前进一项：先 2，再 3，最后 5。
+    // 每次识别失败就往后走一项：第一次 2，然后 3，再然后 5。
     // Advance once per failed recognition: first key 2, then 3, then 5.
     const int fallbackSpell = FALLBACK_SPELLS[fallbackDemoStep];
     Serial.print("[AI] Gesture not recognised; showing demo key ");
@@ -459,10 +477,13 @@ static void castSpell() {
   }
 }
 
-// 按键消抖后检测 OFF 到 ON 的变化；每次拨到 ON 只施放一次。
+// 消抖后只看 OFF 到 ON 的变化，每次拨到 ON 施法一次。
 // Debounced OFF -> ON detection: one cast each time the switch is turned ON.
-// 开关一直保持 ON 不会重复施放，拨回 OFF 也不会触发。
+// 一直放在 ON 不会重复施法，拨回 OFF 也不触发。
 // Leaving it ON does not repeat; switching OFF does nothing.
+// ==================================================
+// 7. Button handling / 按钮处理
+// ==================================================
 static void pollButton() {
   bool raw = digitalRead(BUTTON_PIN);
   uint32_t now = millis();
@@ -476,9 +497,9 @@ static void pollButton() {
     if (buttonStable == SWITCH_ON_LEVEL || CAST_ON_EVERY_PRESS) {
       Serial.println(buttonStable == SWITCH_ON_LEVEL ? "[SWITCH] ON" : "[SWITCH] OFF");
       castSpell();
-      // 施法过程会暂时占用程序；结束后重新读取开关状态，
+      // 施法这段会占着程序，结束后再读一次开关，
       // Re-sync after the blocking cast so a switch flipped during it
-      // 这样过程中拨动开关也能正确同步，不会因此又施放一次。
+      // 这样中途拨动也能同步好，不会自己又多施法一次。
       // is read correctly and never triggers a second cast by itself.
       buttonLastRaw = digitalRead(BUTTON_PIN);
       buttonStable = buttonLastRaw;
@@ -489,6 +510,9 @@ static void pollButton() {
   }
 }
 
+// ==================================================
+// 8. Setup and loop / 初始化和主循环
+// ==================================================
 void setup() {
   Serial.begin(115200);
   delay(1500);
