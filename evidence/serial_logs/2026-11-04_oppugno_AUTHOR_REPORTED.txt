@@ -1,0 +1,16 @@
+# Author-reported serial excerpt
+
+The author supplied this excerpt from a demonstration run on 4 November 2026. The full log and exact firmware build identifier were not retained. This is one example classification, not a dataset-level accuracy measurement.
+
+```text
+05:44:35.698 ->   incendio: 0.0000
+05:44:35.698 ->   leviosa: 0.0000
+05:44:35.698 ->   oppugno: 0.9844
+05:44:35.698 ->   stupefy: 0.0117
+05:44:35.698 -> [AI] Recognised: oppugno (98.4%)
+05:44:35.698 -> [LIGHT] Purple = recognised
+05:44:35.698 -> [SPELL] oppugno
+05:44:36.183 -> [WiFi] Connecting...
+```
+
+The author reports that the prototype's demonstrations worked, including the light effects. The excerpt itself shows a single Oppugno classification and the beginning of a Wi-Fi connection attempt; it does not independently document the full test sequence or count repetitions.
