@@ -46,3 +46,7 @@ The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted v
 
 ## 4 Nov: final adopted source and follow-up iteration
 The author supplied `firmware/final/SPELLBOUND_Final.ino` as the final adopted version, then supplied a further iteration of that same sketch. The later source adds a 350 ms cyan preparation cue before the two-second capture, 400 kHz I2C, timing and saturation diagnostics, a configurable gyro motion gate (35 dps by default), and an optional retry that is disabled by default. The author confirms this follow-up version was run on the prototype; no serial log or diagnostic measurements from that run are retained in the repository. The earlier visual-effects candidate and its fallback screenshots remain separate from this final source. A compile-time check ensures the exported model has six labels, matching the spell list.
+
+
+## 4 Nov: combined countdown and diagnostics candidate
+A candidate sketch was assembled from the two author-supplied source files. It combines the 350 ms cyan preparation cue, 12-group countdown during the two-second capture, sampling and saturation diagnostics, motion gate, optional retry, spell inference and Vespera effects. This merged sketch has not yet been tested as one build. See `firmware/candidate/SPELLBOUND_Combined_Candidate.ino` and `docs/testing.md`.

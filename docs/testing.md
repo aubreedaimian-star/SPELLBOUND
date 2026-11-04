@@ -28,6 +28,10 @@ The author confirms the follow-up version has been run. Use this short list to r
 
 Example record: date/time · sketch file · model/project · gesture · serial label/confidence · MQTT connected? · visible Vespera response · evidence filename.
 
+## Combined countdown and diagnostics candidate
+
+`firmware/candidate/SPELLBOUND_Combined_Candidate.ino` combines the 12-group countdown from the second supplied sketch with the preparation cue, timing and saturation diagnostics, motion gate and optional retry from the other supplied sketch. The countdown publishes MQTT frames during sampling, so timing diagnostics are included to reveal whether network publishing delays samples. This combined source has not yet been run as an integrated build; keep it separate from the tested source until it has been checked on the hardware.
+
 ## Earlier visual-effects candidate
 
 `firmware/candidate/SPELLBOUND_Visual_Effects.ino` is an earlier version. It has a countdown cue and plays demo keys 2, 3 and 5 after successive unrecognised gestures. The screenshots in `evidence/serial_logs/2026-11-04-serial-*.png` show those fallback messages. Some runs report MQTT disconnected, so those screenshots alone do not show the luminaire receiving the effects.

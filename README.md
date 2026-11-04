@@ -75,7 +75,7 @@ The sketch sets `ACCEL_IN_G = false`, so acceleration is passed in m/s². `DIAG_
 | 3 Nov | Visual-effects candidate with countdown cue and fallback demos |
 | 4 Nov | Author supplied the final adopted MAGIC sketch |
 
-Earlier visual-effects candidate and v4 files remain available as development versions. See [development-log.md](docs/development-log.md).
+The combined countdown/diagnostics source is stored as an unverified candidate; earlier visual-effects candidate and v4 files also remain available as development versions. See [development-log.md](docs/development-log.md).
 
 ## Contributions and AI use
 
