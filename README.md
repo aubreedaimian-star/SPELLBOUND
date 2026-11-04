@@ -10,7 +10,11 @@ The wand uses an MPU6050 motion sensor on an ESP32 Feather. In the latest sketch
 - **Network:** Wi-Fi failed during that recorded run, so MQTT delivery and the lighting response have not been tested.
 - **Written but not yet tested on hardware:** MQTT publishing, the spell animations, and the feedback flashes.
 
-Details are in `docs/testing.md` and `docs/known-issues.md`.
+## Project notes
+- [Testing status and evidence](docs/testing.md) separates the single reported classification from features not verified on hardware.
+- [Known issues](docs/known-issues.md) lists the current Wi-Fi and MQTT configuration gaps.
+- [Code inventory](docs/code-inventory.md) records the source files and their provenance.
+- [AI contributions](docs/ai-contributions.md) identifies AI-assisted code and documentation. The detailed analyses in `docs/detailed-analysis/` are AI-generated and are not the author's own work.
 
 ## Development history
 | Date | Step |
